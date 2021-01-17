@@ -10,8 +10,12 @@ TOKEN = config.TOKEN
 awaiting_players = False
 playing_fakin_it = False
 fakin_mid_round = False
+voting = False
 player_list = []
 player_wait_list = []
+number_response_list = []
+game_channel = None
+prompt = ""
 faker = 0
 
 @client.event
@@ -26,6 +30,10 @@ async def on_message(message):
     global playing_fakin_it
     global fakin_mid_round
     global faker
+    global number_response_list
+    global prompt
+    global game_channel
+    global voting
     if message.author == client.user:
         return
     
@@ -35,6 +43,9 @@ async def on_message(message):
             await message.channel.send('Sounds good! We\'ll begin now\n\nType !hands for Hands of Truth\nType !number for Number Pressure\nType !point for You Gotta Point')
 
         if message.content.startswith('!players'):
+            if not player_list:
+                await message.channel.send("No one has joined yet")
+                return
             player_string = ""
             for player in player_list:
                 if player.nick != None:
@@ -53,7 +64,21 @@ async def on_message(message):
             awaiting_players = False
             playing_fakin_it = False
             fakin_mid_round = False
+            player_list = []
             await message.channel.send("Thanks for playing!")
+        if len(number_response_list) != 0:
+            if message.author in player_list:
+                number_response_list[player_list.index(message.author)] = message.content
+            if None not in number_response_list:
+                prompt_responses_string = "The prompt was:\n" + prompt + "\nAnd the responses were:\n"
+                for i in range(0,len(player_list)):
+                    prompt_responses_string += "-" + player_list[i].name + ": " + number_response_list[i] + "\n"
+                prompt_responses_string += "\nNow Vote!"
+                number_response_list = []
+                voting = True
+                await game_channel.send(prompt_responses_string)
+
+        #Number Pressure
         if message.content.startswith('!number'):
             if(fakin_mid_round):
                 await message.channel.send("<@" + str(message.author.id) + "> Please wait for the current round to end")
@@ -65,17 +90,22 @@ async def on_message(message):
                 prompts = f.readlines()
                 for line in enumerate(f):
                     prompts.append(line)
-                prompt = random.randint(0, len(prompts)-1)
+                promptnum = random.randint(0, len(prompts)-1)
+                prompt = prompts[promptnum]
                 for player in player_list:
                     channel = await player.create_dm()
-                    await channel.send(prompts[prompt])
-                prompts.append(prompts.pop(prompt))
+                    number_response_list.append(None)
+                    if player_list.index(player) == faker:
+                        await channel.send("You are the faker! Send me a number between 0-10 and try to blend in")
+                    else:
+                        await channel.send(prompt)
+                prompts.append(prompts.pop(promptnum))
                 f = open("numberpressure.txt", "w")
                 f.writelines(prompts)
 
-
     if message.content.startswith('!fakin it') or (client.user.mentioned_in(message) and 'fakin it' in message.content):
         awaiting_players = True
+        game_channel = message.channel
         await message.channel.send('Who wants to play?\n\nMention me if you want to play\nType !start to start')
         #await msg.add_reaction('\U0001F64B')
 
