@@ -245,4 +245,26 @@ async def on_message(message):
         #await msg.add_reaction('\U0001F64B')
         return
 
+    if message.content.startswith('!add'):
+        message_list = message.content.split()
+        if message_list[1] == "hands":
+            f = "handsoftruth.txt"
+        elif message_list[1] == "number":
+            f = "numberpressure.txt"
+        elif message_list[1] == "point":
+            f = "yougottapoint.txt"
+        else:
+            await message.channel.send("Unknown gamemode. Please try '!add hands', '!add number', or '!add point'")
+            return
+        new_prompt = ""
+        for i in range(2, len(message_list)):
+            new_prompt += message_list[i] + " "
+        new_prompt += "\n"
+        writer = open(f, "r+")
+        content = writer.read()
+        writer.seek(0, 0)
+        writer.write(new_prompt+content)
+        return
+
+
 client.run(TOKEN)
