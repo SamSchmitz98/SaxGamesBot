@@ -19,6 +19,7 @@ voting_list = []
 player_dm_channel_list = []
 game_channel = None
 prompt = ""
+mode = "number"
 faker = 0
 
 def IsInt(s):
@@ -83,6 +84,7 @@ async def on_message(message):
     global fakin_mid_round
     global faker
     global prompt
+    global mode
     global game_channel
     global player_dm_channel_list
     if message.author == client.user:
@@ -141,6 +143,8 @@ async def on_message(message):
                 hand_response_list = []
                 for player in player_list:
                     voting_list.append(None)
+                for dm_channel in player_dm_channel_list:
+                    dm_channel.send(prompt_responses_string)
                 await game_channel.send(prompt_responses_string)
             return
         if len(number_response_list) != 0:
@@ -156,6 +160,8 @@ async def on_message(message):
                 number_response_list = []
                 for player in player_list:
                     voting_list.append(None)
+                for dm_channel in player_dm_channel_list:
+                    dm_channel.send(prompt_responses_string)
                 await game_channel.send(prompt_responses_string)
             return
         if len(point_response_list) != 0:
@@ -170,6 +176,8 @@ async def on_message(message):
                 point_response_list = []
                 for player in player_list:
                     voting_list.append(None)
+                for dm_channel in player_dm_channel_list:
+                    dm_channel.send(prompt_responses_string)
                 await game_channel.send(prompt_responses_string)
             return
         
@@ -194,14 +202,16 @@ async def on_message(message):
                 vote_results_string += "\n"
                 if tie:
                     vote_results_string += "There was a tie. No one is outed"
-                    await send_prompts("number")
+                    await send_prompts(mode)
                 else:
                     if voted_for == faker:
                         vote_results_string += player_list[voted_for].name + " was the faker!\n\nSelect the next round"
                         fakin_mid_round = False
                     else:
                         vote_results_string += player_list[voted_for].name + " was not the faker!"
-                        await send_prompts("number")
+                        await send_prompts(mode)
+                for dm_channel in player_dm_channel_list:
+                    dm_channel.send(vote_results_string)
                 await game_channel.send(vote_results_string)
                 voting_list = []
                         
@@ -213,6 +223,7 @@ async def on_message(message):
                 await message.channel.send("<@" + str(message.author.id) + "> Please wait for the current round to end")
             else:
                 fakin_mid_round = True
+                mode = "hands"
                 faker = random.randint(0, len(player_list)-1)
                 await message.channel.send("Now playing a round of Hands of Truth")
                 await send_prompts("hands")
@@ -223,6 +234,7 @@ async def on_message(message):
                 await message.channel.send("<@" + str(message.author.id) + "> Please wait for the current round to end")
             else:
                 fakin_mid_round = True
+                mode = "number"
                 faker = random.randint(0, len(player_list)-1)
                 await message.channel.send("Now playing a round of Number Pressure")
                 await send_prompts("number")
@@ -233,6 +245,7 @@ async def on_message(message):
                 await message.channel.send("<@" + str(message.author.id) + "> Please wait for the current round to end")
             else:
                 fakin_mid_round = True
+                mode = "point"
                 faker = random.randint(0, len(player_list)-1)
                 await message.channel.send("Now playing a round of You Gotta Point")
                 await send_prompts("point")
