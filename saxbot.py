@@ -279,5 +279,21 @@ async def on_message(message):
         writer.write(new_prompt+content)
         return
 
+    if message.content.startswith('!dndrecap'):
+        writer = open("dndrecap.txt", "r")
+        await message.channel.send(writer.read())
+
+    if message.content.startswith('!updatedndrecap'):
+        writer = open("dndrecap.txt", "r+")
+        content = writer.read()
+        writer.write(message.content[15:])
+
+    if message.content.startswith('!cleardndrecap'):
+        writer = open("dndrecap.txt", "r+")
+        await message.channel.send("Cleared\n\n" + writer.read())
+        writer.truncate(0)
+
+    if message.content.startswith('!dndhelp'):
+        await message.channel.send("!dndrecap for the current recap\n!updatedndrecap to append text to the end of the recap\n!cleardndrecap to erase the current recap, but outputting it first")
 
 client.run(TOKEN)
