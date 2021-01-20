@@ -30,6 +30,8 @@ def IsInt(s):
         return False
 
 async def send_prompts(mode):
+    global player_dm_channel_list
+    player_dm_channel_list = []
     if mode == "hands":
         file = "handsoftruth.txt"
         lst = hand_response_list
@@ -95,11 +97,12 @@ async def on_message(message):
             playing_fakin_it = True
             await message.channel.send('Sounds good! We\'ll begin now\n\nType !hands for Hands of Truth\nType !number for Number Pressure\nType !point for You Gotta Point')
             return
-        if message.content.startswith('!end'):
+        if message.content.startswith('!end') and not playing_fakin_it:
             awaiting_players = False
             playing_fakin_it = False
             fakin_mid_round = False
             player_list = []
+            player_dm_channel_list = []
             await message.channel.send("Game cancelled")
             return
 
@@ -128,6 +131,7 @@ async def on_message(message):
             playing_fakin_it = False
             fakin_mid_round = False
             player_list = []
+            player_dm_channel_list = []
             await message.channel.send("Thanks for playing!")
             return
         if len(hand_response_list) != 0:
@@ -144,7 +148,7 @@ async def on_message(message):
                 for player in player_list:
                     voting_list.append(None)
                 for dm_channel in player_dm_channel_list:
-                    dm_channel.send(prompt_responses_string)
+                    await dm_channel.send(prompt_responses_string)
                 await game_channel.send(prompt_responses_string)
             return
         if len(number_response_list) != 0:
@@ -161,7 +165,7 @@ async def on_message(message):
                 for player in player_list:
                     voting_list.append(None)
                 for dm_channel in player_dm_channel_list:
-                    dm_channel.send(prompt_responses_string)
+                    await dm_channel.send(prompt_responses_string)
                 await game_channel.send(prompt_responses_string)
             return
         if len(point_response_list) != 0:
@@ -177,7 +181,7 @@ async def on_message(message):
                 for player in player_list:
                     voting_list.append(None)
                 for dm_channel in player_dm_channel_list:
-                    dm_channel.send(prompt_responses_string)
+                    await dm_channel.send(prompt_responses_string)
                 await game_channel.send(prompt_responses_string)
             return
         
@@ -202,17 +206,23 @@ async def on_message(message):
                 vote_results_string += "\n"
                 if tie:
                     vote_results_string += "There was a tie. No one is outed"
+                    for dm_channel in player_dm_channel_list:
+                        await dm_channel.send(vote_results_string)
+                    await game_channel.send(vote_results_string)
                     await send_prompts(mode)
                 else:
                     if voted_for == faker:
                         vote_results_string += player_list[voted_for].name + " was the faker!\n\nSelect the next round"
                         fakin_mid_round = False
+                        for dm_channel in player_dm_channel_list:
+                            await dm_channel.send(vote_results_string)
+                        await game_channel.send(vote_results_string)
                     else:
                         vote_results_string += player_list[voted_for].name + " was not the faker!"
+                        for dm_channel in player_dm_channel_list:
+                            await dm_channel.send(vote_results_string)
+                        await game_channel.send(vote_results_string)
                         await send_prompts(mode)
-                for dm_channel in player_dm_channel_list:
-                    dm_channel.send(vote_results_string)
-                await game_channel.send(vote_results_string)
                 voting_list = []
                         
 
@@ -279,21 +289,21 @@ async def on_message(message):
         writer.write(new_prompt+content)
         return
 
-    if message.content.startswith('!dndrecap'):
+    if message.content.startswith('!recapdnd'):
         writer = open("dndrecap.txt", "r")
-        await message.channel.send(writer.read())
+        await message.channel.send("Last time on DnD...\n\n"+writer.read()+"\n\nWhat's going to happen next? Tune in tonight!")
 
-    if message.content.startswith('!updatedndrecap'):
+    if message.content.startswith('!updatednd'):
         writer = open("dndrecap.txt", "r+")
         content = writer.read()
         writer.write(message.content[15:])
 
-    if message.content.startswith('!cleardndrecap'):
+    if message.content.startswith('!cleardnd'):
         writer = open("dndrecap.txt", "r+")
         await message.channel.send("Cleared\n\n" + writer.read())
         writer.truncate(0)
 
-    if message.content.startswith('!dndhelp'):
-        await message.channel.send("!dndrecap for the current recap\n!updatedndrecap to append text to the end of the recap\n!cleardndrecap to erase the current recap, but outputting it first")
+    if message.content.startswith('!helpdnd'):
+        await message.channel.send("!recapdnd for the current recap\n!updatednd to append text to the end of the recap\n!cleardnd to erase the current recap, but outputting it first")
 
 client.run(TOKEN)
