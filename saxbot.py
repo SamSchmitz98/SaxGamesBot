@@ -289,21 +289,93 @@ async def on_message(message):
         writer.write(new_prompt+content)
         return
 
-    if message.content.startswith('!recapdnd'):
+    if message.content.startswith('!dndrecap'):
         writer = open("dndrecap.txt", "r")
-        await message.channel.send("Last time on DnD...\n\n"+writer.read()+"\n\nWhat's going to happen next? Tune in tonight!")
+        await message.channel.send("Last time on DnD...\n\n")
+        msg = writer.read(2000).strip()
+        while len(msg) > 0:
+            await message.channel.send(msg)
+            msg = writer.read(2000).strip()
+        await message.channel.send("\n\nWhat's going to happen next? Tune in tonight!")
 
-    if message.content.startswith('!updatednd'):
+    if message.content.startswith('!dndupdate'):
         writer = open("dndrecap.txt", "r+")
         content = writer.read()
-        writer.write(message.content[15:])
+        writer.write(message.content[10:])
 
-    if message.content.startswith('!cleardnd'):
+    if message.content.startswith('!dndclear'):
         writer = open("dndrecap.txt", "r+")
-        await message.channel.send("Cleared\n\n" + writer.read())
+        await message.channel.send("Cleared\n\n")
+        msg = writer.read(2000).strip()
+        while len(msg) > 0:
+            await message.channel.send(msg)
+            msg = writer.read(2000).strip()
         writer.truncate(0)
 
-    if message.content.startswith('!helpdnd'):
-        await message.channel.send("!recapdnd for the current recap\n!updatednd to append text to the end of the recap\n!cleardnd to erase the current recap, but outputting it first")
+    if message.content.startswith('!dndhelp'):
+        await message.channel.send("!recapdnd for the current recap\n!updatednd to append text to the end of the recap\n!cleardnd to erase the current recap, but outputting it first\n!heropointhelp for hero points information")
+
+    if message.content == '!heropoints':
+        f = open("heropoints.txt", "r")
+        lines = f.readlines()
+        for x in range(1, len(lines)):
+            user = await client.fetch_user(lines[x].split()[0])
+            if hasattr(user, 'nick'):
+                await message.channel.send(user.nick)
+            else:
+                await message.channel.send(user.name + " has " + lines[x].split()[1] + " hero points")
+
+    if message.content.startswith('!heropointset'):
+        f = open("heropoints.txt", "r")
+        lines = f.readlines()
+        if (str(message.author.id) != lines[0].split()[1]):
+            await message.channel.send("Nope! You aren't the DM")
+            return
+        player = message.mentions[0].id
+        found = False
+        for x in range(len(lines)):
+            if (lines[x].split()[0] == str(player)):
+                lines[x] = str(player) + " " + message.content.split()[2] + "\n"
+                found = True
+                break
+        if not found:
+            lines.append(str(player) + " " + message.content.split()[2] + "\n")
+        f.close()
+        f = open("heropoints.txt", "w")
+        f.writelines(lines)
+        await message.add_reaction('\U0001F44D')
+
+    if message.content.startswith('!heropointuse'):
+        f = open("heropoints.txt", "r")
+        lines = f.readlines()
+        player = message.author.id
+        for x in range(len(lines)):
+            if (lines[x].split()[0] == str(player)):
+                if (lines[x].split()[1] == "0"):
+                    await message.channel.send("<@" + str(player) + "> You are out of Hero points silly")
+                    return   
+                lines[x] = str(player) + " " + str(int(lines[x].split()[1])-1) + "\n"
+                break
+        f.close()
+        f = open("heropoints.txt", "w")
+        f.writelines(lines)
+        await message.add_reaction('\U0001F60E')
+
+
+    if message.content.startswith('!heropointdm'):
+        admin = message.mentions[0].id
+        f = open("heropoints.txt", "r")
+        lines = f.readlines()
+        if (str(message.author.id) != lines[0].split()[1] and str(message.author.id) != "265569176884609024" ):
+            await message.channel.send("Nope! You aren't the DM")
+            return
+        lines[0] = "DM: " + str(admin) + "\n"
+        f.close()
+        f = open("heropoints.txt", "w")
+        f.writelines(lines)
+        await message.add_reaction('\U0001F44D')
+
+    if message.content.startswith('!heropointhelp'):
+        await message.channel.send("!heropoints to view current heropoint levels\n!heropointdm followed by the user to set the current DM\n!heropointuse to use a hero point\n!heropointset followed by the user and a number to set the users current hero point level")
 
 client.run(TOKEN)
