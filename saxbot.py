@@ -361,6 +361,27 @@ async def on_message(message):
         f.writelines(lines)
         await message.add_reaction('\U0001F60E')
 
+    if message.content.startswith('!heropointall'):
+        if len(message.content.split()) != 2:
+            await message.channel.send("Wrong number of arguments. Sorry")
+            return
+        addednum = message.content.split()[1]
+        f = open("heropoints.txt", "r")
+        lines = f.readlines()
+        if (str(message.author.id) != lines[0].split()[1]):
+            await message.channel.send("Nope! You aren't the DM")
+            return
+        player = message.author.id
+        for x in range(1, len(lines)):
+            if (lines[x].split()[1] == "0"):
+                await message.channel.send("<@" + str(player) + "> You are out of Hero points silly")
+                return   
+            lines[x] = lines[x].split()[0] + " " + str(int(lines[x].split()[1])+int(addednum)) + "\n"
+        f.close()
+        f = open("heropoints.txt", "w")
+        f.writelines(lines)
+        await message.add_reaction('\U0001F60E')
+
 
     if message.content.startswith('!heropointdm'):
         admin = message.mentions[0].id
