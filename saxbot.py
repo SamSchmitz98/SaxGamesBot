@@ -371,12 +371,26 @@ async def on_message(message):
         if (str(message.author.id) != lines[0].split()[1]):
             await message.channel.send("Nope! You aren't the DM")
             return
-        player = message.author.id
-        for x in range(1, len(lines)):
-            if (lines[x].split()[1] == "0"):
-                await message.channel.send("<@" + str(player) + "> You are out of Hero points silly")
-                return   
+        for x in range(1, len(lines)): 
             lines[x] = lines[x].split()[0] + " " + str(int(lines[x].split()[1])+int(addednum)) + "\n"
+        f.close()
+        f = open("heropoints.txt", "w")
+        f.writelines(lines)
+        await message.add_reaction('\U0001F60E')
+
+    if message.content.startswith('!heropointadd'):
+        if len(message.content.split()) != 2:
+            await message.channel.send("Wrong number of arguments. Sorry")
+            return
+        addedplayer = message.mentions[0].id
+        f = open("heropoints.txt", "r")
+        lines = f.readlines()
+        if (str(message.author.id) != lines[0].split()[1]):
+            await message.channel.send("Nope! You aren't the DM")
+            return
+        for x in range(1, len(lines)):
+            if (lines[x].split()[0] == "addedplayer"):
+                lines[x] = lines[x].split()[0] + " " + str(int(lines[x].split()[1])+1) + "\n"
         f.close()
         f = open("heropoints.txt", "w")
         f.writelines(lines)
@@ -398,5 +412,18 @@ async def on_message(message):
 
     if message.content.startswith('!heropointhelp'):
         await message.channel.send("!heropoints to view current heropoint levels\n!heropointdm followed by the user to set the current DM\n!heropointuse to use a hero point\n!heropointset followed by the user and a number to set the users current hero point level")
+
+    if message.content.startswith('!lmgtfy'):
+        str = "https://letmegooglethat.com/?q="
+        for x in message.content.split()[1:]:
+            str += x + "+"
+        str = str[:-1]
+        await message.channel.send(str)
+
+    if ':0' in message.content:
+        await message.channel.send(':0')
+
+    if ':O' in message.content:
+        await message.channel.send(':0')
 
 client.run(TOKEN)
