@@ -349,12 +349,18 @@ async def on_message(message):
         f = open("heropoints.txt", "r")
         lines = f.readlines()
         player = message.author.id
+        points = 1
+        if len(message.content.split()) == 2:
+            points = int(message.content.split()[1])
+        if points < 0:
+            await message.channel.send("<@" + str(player) + "> quit trying to cheat or the DM will be angry")
+            return
         for x in range(len(lines)):
             if (lines[x].split()[0] == str(player)):
                 if (lines[x].split()[1] == "0"):
                     await message.channel.send("<@" + str(player) + "> You are out of Hero points silly")
                     return   
-                lines[x] = str(player) + " " + str(int(lines[x].split()[1])-1) + "\n"
+                lines[x] = str(player) + " " + str(int(lines[x].split()[1])-points) + "\n"
                 break
         f.close()
         f = open("heropoints.txt", "w")
@@ -414,16 +420,19 @@ async def on_message(message):
         await message.channel.send("!heropoints to view current heropoint levels\n!heropointdm followed by the user to set the current DM\n!heropointuse to use a hero point\n!heropointset followed by the user and a number to set the users current hero point level")
 
     if message.content.startswith('!lmgtfy'):
-        str = "https://letmegooglethat.com/?q="
+        googlemessage = "https://letmegooglethat.com/?q="
         for x in message.content.split()[1:]:
-            str += x + "+"
-        str = str[:-1]
+            googlemessage += x + "+"
+        googlemessage = str[:-1]
         await message.channel.send(str)
 
     if ':0' in message.content:
         await message.channel.send(':0')
 
     if ':O' in message.content:
+        await message.channel.send(':0')
+
+    if '😮' in message.content:
         await message.channel.send(':0')
 
 client.run(TOKEN)
