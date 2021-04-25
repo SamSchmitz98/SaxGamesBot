@@ -318,12 +318,11 @@ async def on_message(message):
     if message.content == '!heropoints':
         f = open("heropoints.txt", "r")
         lines = f.readlines()
+        result = ""
         for x in range(1, len(lines)):
             user = await client.fetch_user(lines[x].split()[0])
-            if hasattr(user, 'nick'):
-                await message.channel.send(user.nick)
-            else:
-                await message.channel.send(user.name + " has " + lines[x].split()[1] + " hero points")
+            result += user.name + " has " + lines[x].split()[1] + " hero points\n"
+        await message.channel.send(result)
 
     if message.content.startswith('!heropointset'):
         f = open("heropoints.txt", "r")
@@ -417,7 +416,7 @@ async def on_message(message):
         await message.add_reaction('\U0001F44D')
 
     if message.content.startswith('!heropointhelp'):
-        await message.channel.send("!heropoints to view current heropoint levels\n!heropointdm followed by the user to set the current DM\n!heropointuse to use a hero point\n!heropointset followed by the user and a number to set the users current hero point level")
+        await message.channel.send("!heropoints to view current heropoint levels\n!heropointdm followed by the user to set the current DM\n!heropointuse to use a hero point\n!heropointset followed by the user and a number to set the users current hero point level\n!heropointall followed by a number to add that many points to every user")
 
     if message.content.startswith('!lmgtfy'):
         googlemessage = "https://letmegooglethat.com/?q="
