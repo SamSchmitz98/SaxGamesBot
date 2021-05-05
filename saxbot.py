@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import os
 import requests
 import json
@@ -6,6 +7,7 @@ import config
 import random
 
 client = discord.Client()
+bot = commands.Bot(command_prefix='!')
 TOKEN = config.TOKEN
 awaiting_players = False
 playing_fakin_it = False
@@ -433,5 +435,25 @@ async def on_message(message):
 
     if '😮' in message.content:
         await message.channel.send(':0')
+
+    if '!create role message' in message.content:
+        emojis = ['🔪', '🙅', '🛑']
+        msg = await message.channel.send("Select Role")
+
+        print(msg.id)
+
+        for emoji in emojis:
+            await msg.add_reaction(emoji)
+            
+@client.event
+async def on_reaction_add(reaction, user):
+    Channel = bot.get_channel('839326133311766548')
+    await Channel.send("test1")
+    if reaction.message.channel != Channel:
+        return
+    if reaction.emoji == "🔪":
+        await Channel.send("test")
+        Role = discord.utils.get(user.server.roles, name="Amogers")
+        await client.add_roles(user, Role)
 
 client.run(TOKEN)
