@@ -4,9 +4,13 @@ import os
 import requests
 import json
 import config
+import roledoc
 import random
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.reactions = True
+intents.members = True
+client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!')
 TOKEN = config.TOKEN
 awaiting_players = False
@@ -23,6 +27,9 @@ game_channel = None
 prompt = ""
 mode = "number"
 faker = 0
+msgid = roledoc.MSGID
+emojis = roledoc.EMOJIS
+roles = roledoc.ROLES
 
 def IsInt(s):
     try: 
@@ -73,7 +80,23 @@ async def send_prompts(mode):
 
 @client.event
 async def on_ready():
+    global msgid
+    global emojis
+    global roles
     print('We have logged in as {0.user}'.format(client))
+    # f = open("roledoc.txt", "r")
+    # for line in f.readlines():
+    #     if line.startswith("MSGID"):
+    #         msgid = int(line.split(":")[1])
+    #         print(msgid)
+    #     if line.startswith("EMOJIS"):
+    #         for emoji in line.split(":")[1].split(","):
+    #             emojis.append(emoji)
+    #             print(emoji)
+    #     if line.startswith("ROLES"):
+    #         for role in line.split(":")[1].split(","):
+    #             roles.append(role)
+    #             print(role)
 
 @client.event
 async def on_message(message):
@@ -91,6 +114,7 @@ async def on_message(message):
     global mode
     global game_channel
     global player_dm_channel_list
+    global msgid
     if message.author == client.user:
         return
     
@@ -270,7 +294,7 @@ async def on_message(message):
         #await msg.add_reaction('\U0001F64B')
         return
 
-    if message.content.startswith('!add'):
+    if message.content.startswith('!add '):
         message_list = message.content.split()
         if message_list[1] == "hands":
             f = "handsoftruth.txt"
@@ -436,24 +460,109 @@ async def on_message(message):
     if '😮' in message.content:
         await message.channel.send(':0')
 
-    if '!create role message' in message.content:
-        emojis = ['🔪', '🙅', '🛑']
-        msg = await message.channel.send("Select Role")
-
-        print(msg.id)
+    if '!createrolemessage' in message.content:
+        newmessage = "Add the reactions for the corresponding role:\n"
+        for x in range(len(emojis)):
+            newmessage += str(emojis[x]) + ": " + roles[x] + "\n"
+        msg = await message.channel.send(newmessage)
+        msgid = msg.id
+        print(msgid)
+        f = open("roledoc.py", "r")
+        lines = f.readlines()
+        lines[0] = "MSGID = " + str(msgid) + "\n"
+        f.close()
+        f = open("roledoc.py", "w")
+        f.writelines(lines)
 
         for emoji in emojis:
             await msg.add_reaction(emoji)
+    
+    if '!addrole' in message.content:
+        if len(message.content.split()) < 3:
+            await message.channel.send("Not enough arguments. Try '!addrole <<emoji>> <<role name>>")
+            return
+        emoji = message.content.split()[1]
+        role = " ".join(message.content.split()[2:])
+        if emoji in emojis:
+            await message.channel.send("Emoji already in use. Please remove it or use another one")
+            return
+        if role in roles:
+            await message.channel.send("Role already in use. Please remove it or use another one")
+            return
+        emojis.append(emoji)
+        roles.append(role)
+        f = open("roledoc.py", "r")
+        lines = f.readlines()
+        lines[1] = "EMOJIS = ['"
+        for emj in emojis:
+            lines[1] += str(emj) + "', '"
+        lines[1] = lines[1][:-4]
+        lines[1] += "']\n"
+        lines[2] = "ROLES = ['" + "', '".join(roles) + "']\n"
+        f.close()
+        f = open("roledoc.py", "w", encoding='utf-8')
+        f.writelines(lines)
+        msg = await client.get_channel(800154991456157758).fetch_message(msgid)
+        await msg.add_reaction(emoji)
+        newmessage = "Add the reactions for the corresponding role:\n"
+        for x in range(len(emojis)):
+            newmessage += str(emojis[x]) + ": " + roles[x] + "\n"
+        await msg.edit(content = newmessage)
+
+    if '!removerole' in message.content:
+        if len(message.content.split()) != 2:
+            await message.channel.send("Wrong number of arguments. Try '!removerole <<emoji>>")
+            return
+        emoji = message.content.split()[1]
+        if emoji not in emojis:
+            await message.channel.send("Could not find emoji. Please identify by emoji")
+            return
+        roles.pop(emojis.index(emoji))
+        emojis.remove(emoji)
+        f = open("roledoc.py", "r")
+        lines = f.readlines()
+        lines[1] = "EMOJIS = ['"
+        for emj in emojis:
+            lines[1] += str(emj) + "', '"
+        lines[1] = lines[1][:-4]
+        lines[1] += "']\n"
+        lines[2] = "ROLES = ['" + "', '".join(roles) + "']\n"
+        f.close()
+        f = open("roledoc.py", "w", encoding='utf-8')
+        f.writelines(lines)
+        msg = await client.get_channel(800154991456157758).fetch_message(msgid)
+        await msg.clear_reaction(emoji)
+        newmessage = "Add the reactions for the corresponding role:\n"
+        for x in range(len(emojis)):
+            newmessage += str(emojis[x]) + ": " + roles[x] + "\n"
+        await msg.edit(content = newmessage)
+         
+
+
+        
             
 @client.event
-async def on_reaction_add(reaction, user):
-    Channel = bot.get_channel('839326133311766548')
-    await Channel.send("test1")
-    if reaction.message.channel != Channel:
+async def on_raw_reaction_add(payload):
+    #role permission channel '839326133311766548'
+    #await reaction.message.channel.send("Emoji")
+    if payload.member.bot:
         return
-    if reaction.emoji == "🔪":
-        await Channel.send("test")
-        Role = discord.utils.get(user.server.roles, name="Amogers")
-        await client.add_roles(user, Role)
+    if payload.message_id != msgid:
+        return
+    if payload.emoji.name in emojis:
+        Role = discord.utils.get(payload.member.guild.roles, name=roles[emojis.index(payload.emoji.name)])
+        await payload.member.add_roles(Role)
+
+@client.event
+async def on_raw_reaction_remove(payload):
+    #role permission channel '839326133311766548'
+    #Channel = client.get_channel('800154991456157758')
+    if payload.message_id != msgid:
+        return
+    member = await client.get_guild(payload.guild_id).fetch_member(payload.user_id)
+    if payload.emoji.name in emojis:
+        Role = discord.utils.get(member.roles, name=roles[emojis.index(payload.emoji.name)])
+        await member.remove_roles(Role)
+        #await client.remove_roles(user, Role)
 
 client.run(TOKEN)
