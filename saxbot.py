@@ -315,6 +315,10 @@ async def on_message(message):
         writer.write(new_prompt+content)
         return
 
+    if message.content.startswith('!confession'):
+        print(message.channel.id)
+        await client.get_channel(940308822231220274).send(message.content[12:])
+
     if message.content.startswith('!dndrecap'):
         writer = open("dndrecap.txt", "r")
         await message.channel.send("Last time on DnD...\n\n")
